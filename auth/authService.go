@@ -3,6 +3,7 @@ package auth
 import (
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -13,7 +14,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const secret string = "secret"
+var secret string = os.Getenv("JWT_SECRET_TOKEN")
 
 var userRepository persistence.UserRepository = relational.UserRepositoryImpl{}
 

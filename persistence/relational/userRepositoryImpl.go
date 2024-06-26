@@ -11,6 +11,7 @@ func (repository UserRepositoryImpl) FindUserByUsername(username string) (entity
 
 	foundUser := entity.User{}
 
+	defer getDatabase().Close()
 	userData := getDatabase().QueryRow("SELECT * FROM blog_user WHERE username = ?", username)
 	err := userData.Scan(&foundUser.Id, &foundUser.Username, &foundUser.Password)
 

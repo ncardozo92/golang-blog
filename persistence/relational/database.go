@@ -3,6 +3,7 @@ package relational
 import (
 	"database/sql"
 	"log"
+	"os"
 
 	"github.com/go-sql-driver/mysql"
 )
@@ -10,11 +11,11 @@ import (
 var db *sql.DB
 
 var config mysql.Config = mysql.Config{
-	User:   "root",
-	Passwd: "root",
-	Net:    "tcp",
-	Addr:   "localhost:3306",
-	DBName: "blog",
+	User:   os.Getenv("DB_USER"),
+	Passwd: os.Getenv("DB_PASSWORD"),
+	Net:    os.Getenv("DB_NET"),
+	Addr:   os.Getenv("DB_ADDRESS"),
+	DBName: os.Getenv("DB_NAME"),
 }
 
 func getDatabase() *sql.DB {
