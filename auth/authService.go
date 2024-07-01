@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -11,12 +10,13 @@ import (
 	"github.com/ncardozo92/golang-blog/dto"
 	"github.com/ncardozo92/golang-blog/persistence"
 	"github.com/ncardozo92/golang-blog/persistence/relational"
+	"github.com/ncardozo92/golang-blog/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var secret string = os.Getenv("JWT_SECRET_TOKEN")
 
-var userRepository persistence.UserRepository = relational.UserRepositoryImpl{}
+var userRepository persistence.UserRepository = relational.UserRepositorySQL{}
 
 func Login(context *gin.Context) {
 
@@ -26,8 +26,11 @@ func Login(context *gin.Context) {
 	requestBindingErr := context.ShouldBindJSON(&requestDTO)
 
 	if requestBindingErr != nil {
-		log.Println("Error al recuperar los datos del login:", requestBindingErr.Error())
-		context.JSON(http.StatusBadRequest, gin.H{"error": "El request no es válido"})
+		utils.BuildError(
+			context,
+			requestBindingErr,
+			http.StatusBadRequest,
+			"El request no es válido, por favor siga la documentación")
 		return
 	}
 
@@ -35,8 +38,11 @@ func Login(context *gin.Context) {
 	user, findUserErr := userRepository.FindUserByUsername(requestDTO.Username)
 
 	if findUserErr != nil {
-		log.Println("Error al recuperar el usuario:", findUserErr.Error())
-		context.JSON(http.StatusInternalServerError, gin.H{"error": "Hubo un error al momento de realizar el login"})
+		utils.BuildError(
+			context,
+			findUserErr,
+			http.StatusInternalServerError,
+			"Hubo un error al buscar el usuario")
 		return
 	}
 
@@ -44,8 +50,11 @@ func Login(context *gin.Context) {
 	bcryptCompareErr := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(requestDTO.Password))
 
 	if bcryptCompareErr != nil {
-		log.Println("Bcrypt Error:", bcryptCompareErr.Error())
-		context.JSON(http.StatusUnauthorized, gin.H{"error": "Password incorrecto"})
+		utils.BuildError(
+			context,
+			bcryptCompareErr,
+			http.StatusUnauthorized,
+			"Password incorrecto")
 		return
 	}
 
@@ -63,8 +72,11 @@ func Login(context *gin.Context) {
 	token, jwtSigningErr := tokenGenerator.SignedString([]byte(secret))
 
 	if jwtSigningErr != nil {
-		log.Println("Bcrypt Error:", jwtSigningErr.Error())
-		context.JSON(http.StatusUnauthorized, gin.H{"error": "No pudimos crear tu sesión"})
+		utils.BuildError(
+			context,
+			jwtSigningErr,
+			http.StatusInternalServerError,
+			"No pudimos generar el token")
 		return
 	}
 
