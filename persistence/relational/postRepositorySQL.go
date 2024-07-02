@@ -8,6 +8,7 @@ func (repository PostRepositorySQL) GetAllPosts() ([]entity.Post, error) {
 
 	postsList := []entity.Post{}
 
+	// first we recover all posts
 	postRows, postsQueryErr := getDatabase().Query("SELECT * FROM post")
 
 	if postsQueryErr != nil {
@@ -23,9 +24,30 @@ func (repository PostRepositorySQL) GetAllPosts() ([]entity.Post, error) {
 			return nil, postScanErr
 		}
 
-		// todo: recuperar los tags
-
 		postsList = append(postsList, post)
+	}
+
+	// second we recover all tags to every post
+	for _, post := range postsList {
+		tagsIds := []int64{}
+
+		tagsRows, tagsQueryErr := getDatabase().Query("SELECT id_tag FROM post_tag WHERE id_post = ?", post.Id)
+
+		if tagsQueryErr != nil {
+			return nil, tagsQueryErr
+		}
+
+		for tagsRows.Next() {
+			var tag int64
+			tagScanErr := tagsRows.Scan(&tag)
+
+			if tagScanErr != nil {
+				return nil, tagScanErr
+			}
+			tagsIds = append(tagsIds, tag)
+		}
+
+		post.Tags = tagsIds
 	}
 
 	return postsList, nil

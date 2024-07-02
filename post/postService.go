@@ -16,11 +16,20 @@ func GetAllTags(context *gin.Context) {
 
 	if getAllTagsErr != nil {
 		utils.BuildError(context, getAllTagsErr, http.StatusInternalServerError, "Hubo un problema al recuperar las etiquetas")
+		return
 	}
 
 	context.JSON(http.StatusOK, tags)
 }
 
 func GetAllPosts(context *gin.Context) {
-	context.Status(http.StatusOK)
+	posts, postsErr := postRepository.GetAllPosts()
+
+	if postsErr != nil {
+		utils.BuildError(context, postsErr, http.StatusInternalServerError,
+			"No se pudo recuperar el listado de etiquetas")
+		return
+	}
+
+	context.JSON(http.StatusOK, posts)
 }

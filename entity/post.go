@@ -5,5 +5,5 @@ type Post struct {
 	Title  string
 	Body   string
 	Author int64
-	Tags   []string
+	Tags   []int64
 }
