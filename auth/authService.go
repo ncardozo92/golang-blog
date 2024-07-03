@@ -2,11 +2,8 @@ package auth
 
 import (
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/ncardozo92/golang-blog/dto"
 	"github.com/ncardozo92/golang-blog/persistence"
 	"github.com/ncardozo92/golang-blog/persistence/relational"
@@ -14,7 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var secret string = os.Getenv("JWT_SECRET_TOKEN")
+const LOGIN_PATH string = "/login"
 
 var userRepository persistence.UserRepository = relational.UserRepositorySQL{}
 
@@ -58,18 +55,9 @@ func Login(context *gin.Context) {
 		return
 	}
 
-	// We generate the token with the library found
+	// We generate the JWT
 
-	tokenGenerator := jwt.NewWithClaims(jwt.SigningMethodHS256,
-		jwt.MapClaims{
-			"iss":    "golang-blog",
-			"sub":    user.Username,
-			"userId": user.Id,
-			"iat":    time.Now().Unix(),
-			"exp":    time.Now().Unix() + (5 * 3600), // the token is valid for 5 minutes
-		})
-
-	token, jwtSigningErr := tokenGenerator.SignedString([]byte(secret))
+	token, jwtSigningErr := utils.GenerateJWT(user)
 
 	if jwtSigningErr != nil {
 		utils.BuildError(
