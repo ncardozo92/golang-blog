@@ -7,4 +7,6 @@ import (
 type PostRepository interface {
 	GetAllPosts() ([]entity.Post, error)
 	GetAllTags() ([]entity.Tag, error)
+	GetById(id int64) (entity.Post, error)
+	CreatePost(post entity.Post) error
 }

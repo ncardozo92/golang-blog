@@ -19,6 +19,8 @@ func main() {
 	// Posts and tags
 	router.GET("/tags", post.GetAllTags)
 	router.GET("/posts", post.GetAllPosts)
+	router.GET("/posts/:id", post.GetById)
+	router.POST("/posts", post.Create)
 
 	router.Run(":8080")
 }

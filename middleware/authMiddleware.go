@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"strings"
 
@@ -16,8 +15,6 @@ func IsAuthorized() gin.HandlerFunc {
 
 		if !excludeFromValidation(context.FullPath()) {
 			authToken := context.GetHeader("Authorization")
-
-			log.Printf("Received JWT: %v", authToken)
 
 			// if the token is not sent, then the response should be Forbidden
 			if authToken == "" {
