@@ -44,14 +44,11 @@ func (repository PostRepositorySQL) GetAllPosts() ([]entity.Post, error) {
 	*/
 
 	for i := 0; i < len(postsList); i++ {
-		tagsIds, tagsIdsErr := repository.getAllPostTags(postsList[i].Id)
+		tagsIdsErr := repository.getAllPostTags(&postsList[i])
 
 		if tagsIdsErr != nil {
 			return postsList, tagsIdsErr
 		}
-
-		// por acá debe estar el error de los tags
-		postsList[i].Tags = tagsIds
 	}
 
 	return postsList, nil
@@ -69,24 +66,22 @@ func (repository PostRepositorySQL) GetById(id int64) (entity.Post, error) {
 		return foundPost, postScanErr
 	}
 
-	tagsIds, tagsErr := repository.getAllPostTags(foundPost.Id)
+	tagsErr := repository.getAllPostTags(&foundPost)
 
 	if tagsErr != nil {
 		return foundPost, tagsErr
 	}
 
-	foundPost.Tags = tagsIds
-
 	return foundPost, nil
 }
 
-func (repository PostRepositorySQL) getAllPostTags(postId int64) ([]int64, error) {
+func (repository PostRepositorySQL) getAllPostTags(post *entity.Post) error {
 	tagsIds := []int64{}
 
-	tagsRows, tagsQueryErr := getDatabase().Query("SELECT id_tag FROM post_tag WHERE id_post = ?", postId)
+	tagsRows, tagsQueryErr := getDatabase().Query("SELECT id_tag FROM post_tag WHERE id_post = ?", post.Id)
 
 	if tagsQueryErr != nil {
-		return tagsIds, tagsQueryErr
+		return tagsQueryErr
 	}
 
 	for tagsRows.Next() {
@@ -94,12 +89,14 @@ func (repository PostRepositorySQL) getAllPostTags(postId int64) ([]int64, error
 		tagScanErr := tagsRows.Scan(&tag)
 
 		if tagScanErr != nil {
-			return tagsIds, tagScanErr
+			return tagScanErr
 		}
 		tagsIds = append(tagsIds, tag)
 	}
 
-	return tagsIds, nil
+	post.Tags = tagsIds
+
+	return nil
 }
 
 func (repository PostRepositorySQL) CreatePost(post entity.Post) error {
