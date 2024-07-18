@@ -1,6 +1,9 @@
 package relational
 
 import (
+	"database/sql"
+	"errors"
+
 	"github.com/ncardozo92/golang-blog/entity"
 )
 
@@ -30,18 +33,6 @@ func (repository PostRepositorySQL) GetAllPosts() ([]entity.Post, error) {
 	}
 
 	// second we recover all tags to every post
-	/*
-		for _, post := range postsList {
-			tagsIds, tagsIdsErr := repository.getAllPostTags(post.Id)
-
-			if tagsIdsErr != nil {
-				return postsList, tagsIdsErr
-			}
-
-			// por acá debe estar el error de los tags
-			post.Tags = tagsIds
-		}
-	*/
 
 	for i := 0; i < len(postsList); i++ {
 		tagsIdsErr := repository.getAllPostTags(&postsList[i])
@@ -103,7 +94,7 @@ func (repository PostRepositorySQL) CreatePost(post entity.Post) error {
 
 	sqlStatement := "INSERT INTO post(title, body, author) VALUES(?,?,?)"
 
-	// We do this we need to use a transaction to prevent incosistencies
+	// We do this because we need to use a transaction to prevent incosistencies
 	transaction, getTransactionErr := getDatabase().Begin()
 
 	if getTransactionErr != nil {
@@ -125,19 +116,38 @@ func (repository PostRepositorySQL) CreatePost(post entity.Post) error {
 	}
 
 	// associating all tags to the post
-	for _, tagId := range post.Tags {
-		_, tagAssignErr := transaction.Exec("INSERT INTO post_tag(id_post, id_tag) VALUES(?,?)", idInsertedPost, tagId)
+	TagsAssociationErr := repository.associateTags(transaction, idInsertedPost, post.Tags)
 
-		if tagAssignErr != nil {
-			transaction.Rollback()
-			return tagAssignErr
-		}
+	if TagsAssociationErr != nil {
+		transaction.Rollback()
+		return TagsAssociationErr
 	}
 
 	transactionCommitErr := transaction.Commit()
 
 	if transactionCommitErr != nil {
+		transaction.Rollback()
 		return transactionCommitErr
+	}
+
+	return nil
+}
+
+func (repository PostRepositorySQL) associateTags(transaction *sql.Tx, idPost int64, tagsIds []int64) error {
+	// If we are updating a post, then we need to disassociate the actual tags it may have
+	_, deleteErr := transaction.Exec("DELETE FROM post_tag WHERE id_post = ?", idPost)
+
+	if deleteErr != nil {
+		return deleteErr
+	}
+
+	// Now we do the association
+	for _, tagId := range tagsIds {
+		_, insertErr := transaction.Exec("INSERT INTO post_tag(id_post, id_tag) VALUES(?,?)", idPost, tagId)
+
+		if insertErr != nil {
+			return insertErr
+		}
 	}
 
 	return nil
@@ -165,4 +175,63 @@ func (repository PostRepositorySQL) GetAllTags() ([]entity.Tag, error) {
 		tagsList = append(tagsList, tag)
 	}
 	return tagsList, nil
+}
+
+func (repository PostRepositorySQL) UpdatePost(id int64, updatedData entity.Post) (bool, error) {
+
+	/*
+		// We find the post to be updated
+		postToBeUpdated, getPostErr := repository.GetById(id)
+
+		if getPostErr != nil {
+			return false, getPostErr
+		}
+
+		// After find it, we merge the new data into it
+		postMerged, postMergeErr := mp.Struct(postToBeUpdated, updatedData)
+
+		if !postMerged || postMergeErr != nil {
+			return true, errors.New("no se pudieron mergear los nuevos datos en el post: " + postMergeErr.Error())
+		}
+	*/
+
+	// We start a transaction to update the data
+	transaction, getTransactionErr := getDatabase().Begin()
+
+	if getTransactionErr != nil {
+		return false, getTransactionErr
+	}
+	// We realize the update on the post table
+	updateResult, updateErr := transaction.Exec("UPDATE post SET "+
+		"title = ?, "+"body = ? "+
+		"WHERE id = ?", updatedData.Title, updatedData.Body, id)
+
+	if updateErr != nil {
+		transaction.Rollback()
+		return false, updateErr
+	}
+
+	rowsAffected, getRowsAffectedErr := updateResult.RowsAffected()
+
+	if getRowsAffectedErr != nil {
+		return false, getRowsAffectedErr
+	}
+
+	if rowsAffected < 1 {
+		return false, errors.New("post Does not Exists")
+	}
+	// We re assing the posts
+	tagsUpdatingErr := repository.associateTags(transaction, id, updatedData.Tags)
+
+	if tagsUpdatingErr != nil {
+		return true, tagsUpdatingErr
+	}
+
+	commitErr := transaction.Commit()
+
+	if commitErr != nil {
+		return true, commitErr
+	}
+
+	return true, nil
 }

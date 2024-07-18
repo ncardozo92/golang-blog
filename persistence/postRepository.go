@@ -9,4 +9,5 @@ type PostRepository interface {
 	GetAllTags() ([]entity.Tag, error)
 	GetById(id int64) (entity.Post, error)
 	CreatePost(post entity.Post) error
+	UpdatePost(id int64, post entity.Post) (bool, error)
 }

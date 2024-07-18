@@ -21,6 +21,7 @@ func main() {
 	router.GET("/posts", post.GetAllPosts)
 	router.GET("/posts/:id", post.GetById)
 	router.POST("/posts", post.Create)
+	router.PUT("/posts/:id", post.Update)
 
 	router.Run(":8080")
 }

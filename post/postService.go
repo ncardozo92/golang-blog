@@ -80,12 +80,49 @@ func Create(context *gin.Context) {
 
 	if DTOBindingErr != nil {
 		utils.BuildError(context, DTOBindingErr, http.StatusBadRequest, "El cuerpo de la solicitud no es válido")
+		return
 	}
 
 	createErr := postRepository.CreatePost(fromDTO(dto))
 
 	if createErr != nil {
 		utils.BuildError(context, createErr, http.StatusInternalServerError, "Hubo un error al crear el post")
+		return
+	}
+
+	context.Status(http.StatusOK)
+}
+
+func Update(context *gin.Context) {
+	var dto dto.PostDTO
+	postId, postIdConvertErr := strconv.Atoi(context.Param("id"))
+
+	if postIdConvertErr != nil {
+		utils.BuildError(context, postIdConvertErr, http.StatusBadRequest, "El ID debe ser un valor numérico")
+		return
+	}
+
+	DTOBindingErr := context.BindJSON(&dto)
+
+	if DTOBindingErr != nil {
+		utils.BuildError(context, DTOBindingErr, http.StatusBadRequest, "El cuerpo de la solicitud no es válido")
+		return
+	}
+
+	existsPost, postUpdateErr := postRepository.UpdatePost(int64(postId), fromDTO(dto))
+
+	if postUpdateErr != nil {
+		var statusCode int
+		var message string
+		if !existsPost {
+			statusCode = http.StatusNotFound
+			message = "El post no existe"
+		} else {
+			statusCode = http.StatusInternalServerError
+			message = "Hubo un error al actualizar los datos del post"
+		}
+
+		utils.BuildError(context, postUpdateErr, statusCode, message)
 		return
 	}
 
