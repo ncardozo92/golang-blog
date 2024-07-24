@@ -24,7 +24,7 @@ func GenerateJWT(user entity.User) (string, error) {
 			"sub":    user.Username,
 			"userId": user.Id,
 			"iat":    now,
-			"exp":    now + (5 * 3600), // the token is valid for 5 minutes
+			"exp":    now + (5 * 60), // the token is valid for 5 minutes
 		})
 
 	return tokenGenerator.SignedString([]byte(secret))
