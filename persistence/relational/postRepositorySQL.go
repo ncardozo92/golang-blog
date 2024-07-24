@@ -7,6 +7,8 @@ import (
 	"github.com/ncardozo92/golang-blog/entity"
 )
 
+const query_delete_tags string = "DELETE FROM post_tag WHERE id_post = ?"
+
 type PostRepositorySQL struct{}
 
 func (repository PostRepositorySQL) GetAllPosts() ([]entity.Post, error) {
@@ -135,7 +137,7 @@ func (repository PostRepositorySQL) CreatePost(post entity.Post) error {
 
 func (repository PostRepositorySQL) associateTags(transaction *sql.Tx, idPost int64, tagsIds []int64) error {
 	// If we are updating a post, then we need to disassociate the actual tags it may have
-	_, deleteErr := transaction.Exec("DELETE FROM post_tag WHERE id_post = ?", idPost)
+	_, deleteErr := transaction.Exec(query_delete_tags, idPost)
 
 	if deleteErr != nil {
 		return deleteErr
@@ -179,22 +181,6 @@ func (repository PostRepositorySQL) GetAllTags() ([]entity.Tag, error) {
 
 func (repository PostRepositorySQL) UpdatePost(id int64, updatedData entity.Post) (bool, error) {
 
-	/*
-		// We find the post to be updated
-		postToBeUpdated, getPostErr := repository.GetById(id)
-
-		if getPostErr != nil {
-			return false, getPostErr
-		}
-
-		// After find it, we merge the new data into it
-		postMerged, postMergeErr := mp.Struct(postToBeUpdated, updatedData)
-
-		if !postMerged || postMergeErr != nil {
-			return true, errors.New("no se pudieron mergear los nuevos datos en el post: " + postMergeErr.Error())
-		}
-	*/
-
 	// We start a transaction to update the data
 	transaction, getTransactionErr := getDatabase().Begin()
 
@@ -233,5 +219,45 @@ func (repository PostRepositorySQL) UpdatePost(id int64, updatedData entity.Post
 		return true, commitErr
 	}
 
+	return true, nil
+}
+
+func (repository PostRepositorySQL) Delete(id int64) (bool, error) {
+
+	transaction, getTransactionErr := getDatabase().Begin()
+
+	if getTransactionErr != nil {
+		return false, getTransactionErr
+	}
+
+	// first we delete all tags associated to the post
+	_, deleteTagsErr := transaction.Exec(query_delete_tags, id)
+
+	if deleteTagsErr != nil {
+		transaction.Rollback()
+		return false, deleteTagsErr
+	}
+
+	// we delete the post
+	deletePostResult, deletePostErr := transaction.Exec("DELETE FROM post WHERE id = ?", id)
+
+	if deletePostErr != nil {
+		transaction.Rollback()
+		return false, deletePostErr
+	}
+
+	deletedPosts, getDeletedPostErr := deletePostResult.RowsAffected()
+
+	if getDeletedPostErr != nil {
+		transaction.Rollback()
+		return true, getDeletedPostErr
+	}
+
+	if deletedPosts < 0 {
+		transaction.Rollback()
+		return false, nil
+	}
+
+	transaction.Commit()
 	return true, nil
 }

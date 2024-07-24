@@ -1,6 +1,7 @@
 package post
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -131,4 +132,25 @@ func Update(context *gin.Context) {
 
 func isPresent(post entity.Post) bool {
 	return post.Id != 0
+}
+
+func Delete(context *gin.Context) {
+
+	id, idConvertErr := strconv.Atoi(context.Param("id"))
+
+	if idConvertErr != nil {
+		utils.BuildError(context, idConvertErr, http.StatusBadRequest, "El ID debe ser un valor numérico")
+		return
+	}
+
+	deleted, deleteErr := postRepository.Delete(int64(id))
+
+	if deleteErr != nil {
+		utils.BuildError(context, deleteErr, http.StatusInternalServerError, "Hubo un error al eliminar el post")
+		return
+	} else if !deleted {
+		utils.BuildError(context,
+			errors.New("post not found"),
+			http.StatusInternalServerError, "No existe un Post con el id proporcionado")
+	}
 }
