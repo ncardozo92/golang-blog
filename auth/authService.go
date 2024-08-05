@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -35,6 +36,14 @@ func Login(context *gin.Context) {
 	user, findUserErr := userRepository.FindUserByUsername(requestDTO.Username)
 
 	if findUserErr != nil {
+		if findUserErr == sql.ErrNoRows {
+			utils.BuildError(
+				context,
+				findUserErr,
+				http.StatusNotFound,
+				"usuario no encontrado")
+			return
+		}
 		utils.BuildError(
 			context,
 			findUserErr,
