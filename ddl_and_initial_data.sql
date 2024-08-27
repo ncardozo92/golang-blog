@@ -41,7 +41,7 @@ create table post_tag(
 
 create table comment(
 	id bigint auto_increment,
-	content varchar(30) not null,
+	content varchar(500) not null,
 	id_post bigint,
 	id_user bigint,
 	primary key(id),

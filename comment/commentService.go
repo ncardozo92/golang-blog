@@ -24,6 +24,7 @@ func GetAllByPostId(context *gin.Context) {
 		// todo: implementar esta alternativa
 		//context.AbortWithStatusJSON(400, ErrorDto)
 		utils.BuildError(context, idConvertErr, http.StatusBadRequest, "El id debe ser un valor numérico")
+		return
 	}
 
 	comments, getCommentsErr := commentRepository.GetAllByPostId(int64(postId))
@@ -31,6 +32,7 @@ func GetAllByPostId(context *gin.Context) {
 	if getCommentsErr != nil {
 		utils.BuildError(context, getCommentsErr,
 			http.StatusInternalServerError, "Hubo un error al recuperar los comentarios del post")
+		return
 	}
 
 	for _, comment := range comments {
@@ -49,6 +51,7 @@ func GetByUser(context *gin.Context) {
 			fmt.Errorf("userId not provided trought query string"),
 			http.StatusBadRequest,
 			"Debe enviarse un userId por query string. Ej: ?userId=12345")
+		return
 	}
 
 	userId, userIdConvertErr := strconv.ParseInt(userIdString, 10, 64)
@@ -58,6 +61,7 @@ func GetByUser(context *gin.Context) {
 			userIdConvertErr,
 			http.StatusBadRequest,
 			"El userId debe ser un valor numérico. Ej: ?userId=12345")
+		return
 	}
 
 	comments, getCommentsErr := commentRepository.GetByUserId(userId)
@@ -67,6 +71,7 @@ func GetByUser(context *gin.Context) {
 			getCommentsErr,
 			http.StatusInternalServerError,
 			"Hubo un error al recuperar los comentarios")
+		return
 	}
 
 	for _, comment := range comments {
@@ -74,4 +79,21 @@ func GetByUser(context *gin.Context) {
 	}
 
 	context.JSON(200, dtoList)
+}
+
+func Create(context *gin.Context) {
+	dto := dto.CommentDTO{}
+
+	dtoBindingErr := context.ShouldBindJSON(&dto)
+
+	if dtoBindingErr != nil {
+		utils.BuildError(context, dtoBindingErr, http.StatusBadRequest, "El JSON enviado no es válido")
+	}
+
+	saveErr := commentRepository.Save(FromDTO(dto))
+
+	if saveErr != nil {
+		utils.BuildError(context, saveErr, http.StatusInternalServerError, "No se pudo guardar el comentario")
+		return
+	}
 }
