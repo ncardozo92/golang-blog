@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -52,4 +54,32 @@ func parseJWT(tokenString string) (*jwt.Token, error) {
 
 		return []byte(secret), nil
 	})
+}
+
+func GetUserId(tokenString string) (int64, error) {
+	// We recover the payload of the JWT
+	encodedPayload := strings.Split(tokenString, ".")[1]
+	//decodedPayload := make([]byte, base64.StdEncoding.DecodedLen(len(encodedPayload)))
+	rawPayload := make(map[string]any)
+
+	// Now we decode the payload
+	decodedPayload, decodingErr := base64.RawURLEncoding.DecodeString(encodedPayload)
+
+	if decodingErr != nil {
+		return 0, decodingErr
+	}
+
+	unmarshallErr := json.Unmarshal(decodedPayload, &rawPayload)
+
+	if unmarshallErr != nil {
+		return 0, unmarshallErr
+	}
+
+	userId, userIdOk := rawPayload[userIdField]
+
+	if !userIdOk {
+		return 0, fmt.Errorf("user ID is not present at JWT")
+	}
+
+	return int64(userId.(float64)), nil // In this line I convert an interface value to a int64 value
 }
