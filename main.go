@@ -29,6 +29,7 @@ func main() {
 	router.GET("/comments/:postId", comment.GetAllByPostId)
 	router.GET("/comments", comment.GetByUser)
 	router.POST("/comments", comment.Create)
+	router.DELETE("/comments/:id", comment.Delete)
 
 	router.Run(":8080")
 }

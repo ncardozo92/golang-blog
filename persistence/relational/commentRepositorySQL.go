@@ -67,3 +67,27 @@ func (repository CommentRepositorySQL) Save(comment entity.Comment) error {
 
 	return nil
 }
+
+/*
+Delete removes the comment with the specified id,
+it returns false if the comment does not exists and an error if there is somethig wrong
+*/
+func (repository CommentRepositorySQL) Delete(id int64) (bool, error) {
+	deleteResult, err := getDatabase().Exec("DELETE FROM comment WHERE id = ?", id)
+
+	if err != nil {
+		return false, err
+	}
+
+	rowsAffected, rowsAffectedErr := deleteResult.RowsAffected()
+
+	if rowsAffectedErr != nil {
+		return false, rowsAffectedErr
+	}
+
+	if rowsAffected == 0 {
+		return false, nil
+	} else {
+		return true, nil
+	}
+}

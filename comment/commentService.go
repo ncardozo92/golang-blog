@@ -97,3 +97,30 @@ func Create(context *gin.Context) {
 		return
 	}
 }
+
+func Delete(context *gin.Context) {
+
+	idComment, idCommentConvertErr := strconv.Atoi(context.Param("id"))
+
+	if idCommentConvertErr != nil {
+		utils.BuildError(context, idCommentConvertErr, http.StatusBadRequest, "El id debe ser un valor numérico")
+		return
+	}
+
+	deleted, deleteErr := commentRepository.Delete(int64(idComment))
+
+	if deleteErr != nil {
+		utils.BuildError(context, deleteErr, http.StatusInternalServerError, "Hubo un error al eliminar el comentario")
+		return
+	}
+
+	if !deleted {
+		utils.BuildError(context,
+			fmt.Errorf("comment not found"),
+			http.StatusNotFound,
+			"No se encontró el comentario con el ID especificado")
+		return
+	}
+
+	context.Status(http.StatusOK)
+}

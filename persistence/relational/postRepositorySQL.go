@@ -238,6 +238,14 @@ func (repository PostRepositorySQL) Delete(id int64) (bool, error) {
 		return false, deleteTagsErr
 	}
 
+	// we delete all comments associated to the post
+	_, deleteCommentsErr := transaction.Exec("DELETE FROM comment WHERE id_post = ?", id)
+
+	if deleteCommentsErr != nil {
+		transaction.Rollback()
+		return false, deleteCommentsErr
+	}
+
 	// we delete the post
 	deletePostResult, deletePostErr := transaction.Exec("DELETE FROM post WHERE id = ?", id)
 
