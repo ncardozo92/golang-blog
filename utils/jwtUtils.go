@@ -24,6 +24,7 @@ type CustomClaims struct {
 
 var secret string = os.Getenv("JWT_SECRET_TOKEN")
 
+// GenerateJWT generates the token for the user
 func GenerateJWT(user entity.User) (string, error) {
 
 	now := time.Now().Unix()
@@ -40,6 +41,7 @@ func GenerateJWT(user entity.User) (string, error) {
 	return tokenGenerator.SignedString([]byte(secret))
 }
 
+// Validates the signature method and the sing of the JWT
 func ValidateJWT(tokenString string) error {
 	_, err := parseJWT(tokenString)
 
@@ -56,10 +58,10 @@ func parseJWT(tokenString string) (*jwt.Token, error) {
 	})
 }
 
+// returns the user ID from the JWT
 func GetUserId(tokenString string) (int64, error) {
 	// We recover the payload of the JWT
 	encodedPayload := strings.Split(tokenString, ".")[1]
-	//decodedPayload := make([]byte, base64.StdEncoding.DecodedLen(len(encodedPayload)))
 	rawPayload := make(map[string]any)
 
 	// Now we decode the payload

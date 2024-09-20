@@ -16,6 +16,7 @@ const LOGIN_PATH string = "/login"
 
 var userRepository persistence.UserRepository = relational.UserRepositorySQL{}
 
+// Login authenticates the user and bring the JWT required for the rest of the endpoints
 func Login(context *gin.Context) {
 
 	var requestDTO dto.LoginRequestDTO

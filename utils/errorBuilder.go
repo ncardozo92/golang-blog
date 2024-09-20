@@ -8,8 +8,8 @@ import (
 	"github.com/ncardozo92/golang-blog/dto"
 )
 
-// ValidateError takes the error to validate, if err != nil then it will send a HTTP response
-// with the specified status code, the posible message and details
+// BuildError takes the context and sets the http status code and error message to the response
+// and logs the error for details
 func BuildError(
 	context *gin.Context,
 	err error,

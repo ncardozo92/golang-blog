@@ -10,6 +10,8 @@ import (
 	"github.com/ncardozo92/golang-blog/utils"
 )
 
+// IsAuthorized validates the JWT provided at Authorization header
+// and verify the signature method
 func IsAuthorized() gin.HandlerFunc {
 	return func(context *gin.Context) {
 
@@ -20,7 +22,7 @@ func IsAuthorized() gin.HandlerFunc {
 			if authToken == "" {
 				utils.BuildError(
 					context,
-					errors.New("Forbidden request"),
+					errors.New("forbidden request"),
 					http.StatusForbidden,
 					`Header "Authorization" no suministrado`)
 			} else {

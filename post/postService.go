@@ -26,6 +26,7 @@ func GetAllTags(context *gin.Context) {
 	context.JSON(http.StatusOK, tags)
 }
 
+// GetAllPosts returns all the posts in the database
 func GetAllPosts(context *gin.Context) {
 	response := []dto.PostDTO{}
 	posts, postsErr := postRepository.GetAllPosts()
@@ -79,10 +80,21 @@ func Create(context *gin.Context) {
 	dto := dto.PostDTO{}
 	DTOBindingErr := context.BindJSON(&dto)
 
+	jwt := context.GetHeader("Authorization")
+
 	if DTOBindingErr != nil {
 		utils.BuildError(context, DTOBindingErr, http.StatusBadRequest, "El cuerpo de la solicitud no es válido")
 		return
 	}
+
+	userId, userIdErr := utils.GetUserId(jwt)
+
+	if userIdErr != nil {
+		utils.BuildError(context, userIdErr, http.StatusBadRequest, "No se pudo crear el Post")
+		return
+	}
+
+	dto.Author = userId
 
 	createErr := postRepository.CreatePost(fromDTO(dto))
 
@@ -134,6 +146,7 @@ func isPresent(post entity.Post) bool {
 	return post.Id != 0
 }
 
+// Deletes a post by it´s ID
 func Delete(context *gin.Context) {
 
 	id, idConvertErr := strconv.Atoi(context.Param("id"))
